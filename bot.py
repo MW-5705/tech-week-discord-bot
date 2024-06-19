@@ -16,10 +16,10 @@ intents.messages = True
 
 # Bot setup with command prefix and intents
 client = commands.Bot(command_prefix="!", intents=intents)
-bot_status = cycle(["Status One", "Status Two", "Status Three"])
+bot_status = cycle(["WorkHard", "Abhi to bahut kaam pda :/)", "aalsi"])
 
 # Background task to change bot status
-@tasks.loop(seconds=5)
+@tasks.loop(seconds=20)
 async def change_status():
     await client.change_presence(activity=discord.Game(next(bot_status)))
 
