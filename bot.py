@@ -16,10 +16,11 @@ intents.messages = True
 
 # Bot setup with command prefix and intents
 client = commands.Bot(command_prefix="!", intents=intents)
-bot_status = cycle(["WorkHard", "Abhi to bahut kaam pda :/)", "aalsi"])
+client.remove_command('help')
+bot_status = cycle(["Status One", "Status Two", "Status Three"])
 
 # Background task to change bot status
-@tasks.loop(seconds=20)
+@tasks.loop(seconds=5)
 async def change_status():
     await client.change_presence(activity=discord.Game(next(bot_status)))
 
@@ -38,7 +39,6 @@ async def load_cogs():
                 print(f"Loaded extension: {filename}")
             except Exception as e:
                 print(f"Failed to load extension {filename}: {type(e).__name__} - {e}")
-
 
 # Main coroutine to start the bot
 async def main():
