@@ -1,28 +1,51 @@
-from discord import Intents
+import discord
+from discord.ext import commands, tasks
+from itertools import cycle
+import os
+import asyncio
 from dotenv import load_dotenv
-from discord.ext import commands
-from os import getenv
 
-exts =  ["cogs.welcomer", 
-        "cogs.admin_commands",
-        "cogs.team_manager"]
+# Load environment variables from .env file
+load_dotenv()
 
-class MlscBot(commands.Bot):
-  def __init__(self, command_prefix: str, intents: Intents, **kwargs):
-    super().__init__(command_prefix, intents=intents, **kwargs)
-  
-  async def setup_hook(self) -> None:
-    for ext in exts:
-      await self.load_extension(ext)
+# Intents setup
+intents = discord.Intents.all()
+intents.members = True
+intents.presences = True
+intents.messages = True
 
-    print("Loaded all Cogs .....")
+# Bot setup with command prefix and intents
+client = commands.Bot(command_prefix="!", intents=intents)
+client.remove_command('help')
+bot_status = cycle(["Status One", "Status Two", "Status Three"])
 
-    await self.tree.sync()
-  
-  async def on_ready(self):
-    print("MLSC Bot is running ......")
+# Background task to change bot status
+@tasks.loop(seconds=5)
+async def change_status():
+    await client.change_presence(activity=discord.Game(next(bot_status)))
 
+# Event when bot is ready
+@client.event
+async def on_ready():
+    print("Bot is connected to Discord")
+    change_status.start()
+
+# Function to load all cogs
+async def load_cogs():
+    for filename in os.listdir("./cogs"):
+        if filename.endswith(".py"):
+            try:
+                await client.load_extension(f"cogs.{filename[:-3]}")
+                print(f"Loaded extension: {filename}")
+            except Exception as e:
+                print(f"Failed to load extension {filename}: {type(e).__name__} - {e}")
+
+# Main coroutine to start the bot
+async def main():
+    async with client:
+        await load_cogs()
+        await client.start(os.getenv("DISCORD_TOKEN"))  # Retrieve token from environment variable
+
+# Run the main coroutine
 if __name__ == "__main__":
-  bot = MlscBot(command_prefix='!', intents=Intents.all())
-  load_dotenv()
-  bot.run(getenv("DISCORD_TOKEN"))
+    asyncio.run(main())
