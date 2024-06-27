@@ -41,6 +41,5 @@ class ChangenameCommand(commands.Cog):
        else:
            await ctx.send("team not found")
 
-
-
- 
+async def setup(client):
+    await client.add_cog(ChangenameCommand(client))
