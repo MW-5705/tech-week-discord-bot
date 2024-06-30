@@ -29,11 +29,12 @@ async def change_status():
 async def on_ready():
     print("Bot is connected to Discord")
     change_status.start()
-
+    
 # Function to load all cogs
+cogs_path = "tech-week-discord-bot\cogs"
 async def load_cogs():
-    for filename in os.listdir("./cogs"):
-        if filename.endswith(".py"):
+    for filename in os.listdir(cogs_path):
+        if (filename.endswith(".py") and filename[:-3] != "connection"):
             try:
                 await client.load_extension(f"cogs.{filename[:-3]}")
                 print(f"Loaded extension: {filename}")
@@ -44,7 +45,7 @@ async def load_cogs():
 async def main():
     async with client:
         await load_cogs()
-        await client.start(os.getenv("DISCORD_TOKEN"))  # Retrieve token from environment variable
+        await client.start("DISCORD_TOKEN")  # Retrieve token from environment variable
 
 # Run the main coroutine
 if __name__ == "__main__":
