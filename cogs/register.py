@@ -38,7 +38,7 @@ class Register(commands.Cog):
 
         # Check if the user is already registered
         if self.collection.find_one({"discordid": discord_id}):
-            await ctx.send("You are already registered!")
+            await ctx.author.send("You are already registered!")
             return
 
         # Create an embed message with department choices
@@ -46,7 +46,7 @@ class Register(commands.Cog):
         for emoji, department in self.departments.items():
             embed.add_field(name=department, value=emoji, inline=False)
 
-        registration_message = await ctx.send(embed=embed)
+        registration_message = await ctx.author.send(embed=embed)
 
         # Add reactions to the embed message
         for emoji in self.departments.keys():
@@ -58,7 +58,7 @@ class Register(commands.Cog):
         try:
             reaction, user = await self.client.wait_for('reaction_add', timeout=60.0, check=check)
         except TimeoutError:
-            await ctx.send("You took too long to respond. Please try again.")
+            await ctx.author.send("You took too long to respond. Please try again.")
             return
 
         department1 = self.departments[str(reaction.emoji)]
@@ -66,7 +66,7 @@ class Register(commands.Cog):
         for emoji, department in self.departments.items():
             embed.add_field(name=department, value=emoji, inline=False)
 
-        registration_message = await ctx.send(embed=embed)
+        registration_message = await ctx.author.send(embed=embed)
 
         # Add reactions to the embed message
         for emoji in self.departments.keys():
@@ -78,7 +78,7 @@ class Register(commands.Cog):
         try:
             reaction, user = await self.client.wait_for('reaction_add', timeout=60.0, check=check)
         except TimeoutError:
-            await ctx.send("You took too long to respond. Please try again.")
+            await ctx.author.send("You took too long to respond. Please try again.")
             return
 
         department2 = self.departments[str(reaction.emoji)]
@@ -87,9 +87,9 @@ class Register(commands.Cog):
         user_data = {"discordid": discord_id, "department": [department1, department2], "name" : ctx.author.name}
         try:
             self.collection.insert_one(user_data)
-            await ctx.send(f"You are successfully registered with {department1} as Primary and {department2} as Secondary department")
+            await ctx.author.send(f"You are successfully registered with {department1} as Primary and {department2} as Secondary department")
         except Exception as e:
-            await ctx.send("An error occurred while registering. Please try again later.")
+            await ctx.author.send("An error occurred while registering. Please try again later.")
             print(f"Error inserting data into MongoDB: {e}")
 
 async def setup(client):

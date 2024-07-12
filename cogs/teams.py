@@ -148,7 +148,7 @@ class Teams(commands.Cog):
         print("Teams online")
         
     @commands.command(name="create_teams", help="Creates teams with even distribution of participants from all departments.")
-    # @commands.has_role("ExBo")
+    @commands.has_role("ExBo")
     async def create_teams(self, ctx, team_size: int = 4):
         print("works")
         participants_ptr = participants_collection.find({},{"_id":0, "name":0})
