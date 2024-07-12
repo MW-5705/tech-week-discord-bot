@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from cogs.connection import client
+from cogs.connection import cluster
 
 class Channels(commands.Cog):
     def __init__(self,client):
@@ -12,10 +12,12 @@ class Channels(commands.Cog):
     
     @commands.command()
     @commands.has_role("ExBo")
-    async def channel(self, ctx):
+    async def channel(self, ctx,):
+        
         print("chala to sahi")
         guild = ctx.guild
-        db = client["Discord_bot"]
+        category = await guild.create_category(name = "Tech Week Teams")
+        db = cluster["Discord_bot"]
         collection = db["Teams"]
         collection_channels = db["Channels"]
         teams_data = collection.find({},{"_id":0})
@@ -23,17 +25,19 @@ class Channels(commands.Cog):
         teams_channels = []
         for team in teams_data:
             teams_list.append(team)
+        # print(teams_list)
         for team in teams_list:
             members = []
             for i in team["members"]:
-                members.append(i)
+                members.append(i["discordid"])
+            print(members)
             overwrites = {guild.default_role: discord.PermissionOverwrite(read_messages = False)}
             for i in members:
                 member = guild.get_member(i)
                 overwrites[member] = discord.PermissionOverwrite(read_messages = True)
             team_id = team["team_id"]
-            text_channel = await guild.create_text_channel(name = f"{team_id}_text", overwrites = overwrites)
-            voice_channel = await guild.create_voice_channel(name = f"{team_id}_voice", overwrites = overwrites)
+            text_channel = await guild.create_text_channel(name = f"{team_id}_text", overwrites = overwrites, category = category)
+            voice_channel = await guild.create_voice_channel(name = f"{team_id}_voice", overwrites = overwrites, category = category)
             
             print(type(text_channel))
             print(type(voice_channel))

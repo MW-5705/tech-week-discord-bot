@@ -1,3 +1,7 @@
 import pymongo
+from dotenv import load_dotenv
+import os
 
-client = pymongo.MongoClient("mongodb://localhost:27017")
+# mongo_url = os.getenv("MONGO_URL")
+mongo_url = "mongodb://localhost:27017"
+cluster = pymongo.MongoClient(mongo_url)
