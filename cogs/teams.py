@@ -1,103 +1,143 @@
 import discord
 from discord.ext import commands
-from cogs.connection import client
+from cogs.connection import cluster
+from math import floor
 import random
 
-db = client["Discord_bot"]
-participation_collection = db["Participants"]
-participation_ptr = participation_collection.find({}, {"_id":0})
-participation_data = []
-added_participants = []
-index = 0
+db = cluster["Discord_bot"]
+participants_collection = db["Participants"]
 
-for i in participation_ptr:
-    participation_data.append(i)
-# for i in participation_data:
-#     print(i)
-    
-def  categorise_participants(participants):
-    departments = {"tech": [], "design":[], "content":[], "marketing":[]}
-    for i in participants:
-        if i.get('department') in departments.keys():
-            departments[i["department"]].append(i["discordid"])
+order = {0:"tech", 1:"tech", 2:"design", 3:"presentation"}
+added_participants = []
+def categorize_participants(participation_data, preference):
+    departments = {"tech":[], "design":[], "presentation":[]}
+    for i in participation_data:
+        departments[i["department"][preference]].append(i["discordid"])
     for i in departments:
-        if (len(departments[i]) != 0):
-            random.shuffle(departments[i])
+        random.shuffle(departments[i])
     return departments
 
-def get_member(department, departments):
-    if (len(departments[department]) != 0):
-        member = departments[department].pop()
-        # added_participants.append(member)
-        return member
+def get_member(department, departments, participation_data):
+    if len(departments[department])!=0:
+                member = departments[department].pop()
+                for j in participation_data:
+                    if j["discordid"] == member:
+                        added_participants.append(j)
+                        participation_data.remove(j)
+                        break
+                member_dict = {"discordid" : member, "department": department}
+                return member_dict
     return False
 
-def teams_base(team_num, departments):
+def teams_base(team_num,departments, partcipation_data):
     teams = []
     for i in range(team_num):
-        team_id = f"Team-{i+1}"
-        team = {"team_id":team_id, "members" :[]}
-        for key in departments:
-            member = get_member(department=key,departments=departments)
-            if (member):
-                team["members"].append(member)
-                added_participants.append(member)
+        team = {"team_id" : f"Team-{i+1}", "members":[]}
+        for i in order:
+            member_dict = get_member(department=order[i],departments=departments, participation_data=partcipation_data)
+            if (member_dict):
+                team["members"].append(member_dict)
             else:
                 pass
+            
         teams.append(team)
     return teams
-                         
-def make_four(teams, departments):
+
+def remove_complete_teams(teams, teams_complete):
+    team = 0
+    while team < len(teams):
+        if (len(teams[team]["members"]) == 4):
+           teams_complete.append(teams[team])
+           teams.remove(teams[team])
+           
+        else:
+            team += 1
+
+def complete_teams(teams, departments_2, participation_data):
     for i in teams:
-        while (len(i["members"]) < 4):
-            for key in departments:
-                member = get_member(department=key, departments=departments)
-                if (member):
-                    added_participants.append(member)
-                    i["members"].append(member)
+        count = 0
+        for j in i["members"]:
+            if (j["department"] == order[count]): #can add condition for checking length over here
+                count += 1
+                checker = i["members"].index(j) + 1
+                if (checker == len(i["members"]) and len(i["members"]) !=4):
+                    while count < 4:
+                        # if len(departments_2[order[count]]) != 0:
+                        #     member = departments_2[order[count]].pop()
+                        #     for data in participation_data:
+                        #         if (data["discordid"] == member):
+                        #             added_participants.append(data)
+                        #             participation_data.remove(data)
+                        #             break
+                        member_dict = get_member(department=order[count], departments=departments_2, participation_data=participation_data)
+                        if (member_dict):
+                            index = i["members"].index(j)              
+                            i["members"].append( member_dict)
+                            if count < 4:
+                                count+=1
                     break
+                    
+                # new.append(j)
+            else:
+                member_dict = get_member(department=order[count], departments=departments_2,participation_data=participation_data)
+                if (member_dict):
+                    index = i["members"].index(j)              
+                    i["members"].insert(index, member_dict)
+                    count+=1  
+    
 
-def add_left_members_2(teams,department, departments):
-    if len(teams) == 1:
-        member = get_member(department=department, departments=departments)
-        teams[-1]["members"].append(member)
-    else:   
-        global index
-        if index == 0:
-            member = get_member(department=department, departments=departments)
-            teams[index]["members"].append(member)
-            added_participants.append(member)
-            index = 1
-        else:
-            member = get_member(department=department, departments=departments)
-            teams[index]["members"].append(member)
-            added_participants.append(member)
-            index = 0
 
-def add_left_members(teams, department ,  departments):
-    member = get_member(department=department, departments=departments)
-    teams[-1]["members"].append(member)
-    added_participants.append(member)
 
-def form_teams():
-    departments = categorise_participants(participants=participation_data)
-    registration = len(participation_data)
-    team_num = registration // 4
-    teams = teams_base(team_num=team_num, departments=departments)
-    make_four(teams=teams, departments= departments)
-    random.shuffle(teams)
-    team_added = []
-    for department in departments:
-        if len(teams) < len(participation_data)%4:
-            while len(departments[department]) != 0:
-                add_left_members_2(teams = teams, department = department, departments=departments)
-        else:
-             while len(departments[department]) != 0:
-                add_left_members(teams = teams, department = department, departments=departments)
-                team_added.append(teams.pop())
+def form_teams(participation_data):
+    
+    teams_complete = []
+    registrations = len(participation_data)
+    team_num = registrations//4
+    departments = categorize_participants(participation_data=participation_data, preference=0) # participanta divided on the basis of primary departments
+    teams = teams_base(team_num=team_num, departments=departments, partcipation_data=participation_data)# team formation started/ basis of teams is order dictionary
+    remove_complete_teams(teams=teams, teams_complete=teams_complete)# removing complete_teams
+    departments_2 = categorize_participants(participation_data=participation_data, preference=1)# creating dictionary with secondary departments
+    complete_teams(teams=teams, departments_2=departments_2, participation_data=participation_data)# completing all teams with remaining participants and their
+    for team in teams:
+        teams_complete.append(team)
+    
+    print(participation_data)
+    print(teams_complete)
+    if len(participation_data) == 3:
+        team_final = {"team_id":f"Team-{len(teams_complete)+1}", "members":[]}
+        for i in participation_data:
+            team_final['members'].append({"discordid":i["discordid"], "department":i["department"][0]})
+        teams_complete.append(team_final)
+    elif len(participation_data) == 2:
+        team_index = random.randint(0, len(teams_complete)-1)
+        while len(teams_complete[team_index]["members"]) < 4:
+            team_index = random.randint(0, len(teams_complete)-1)
+            
+        member_new = teams_complete[team_index]["members"].pop(0)
+        team_final = {"team_id":f"Team-{len(teams_complete)+1}", "members":[member_new]}
+        for i in participation_data:
+            team_final['members'].append({"discordid":i["discordid"], "department":i["department"][0]})
+        teams_complete.append(team_final)
 
-    teams.extend(team_added)
-    return teams
+    elif len(participation_data) == 1:
+        team_index_0 = 0
+        team_index_1 = 0
+        while (team_index_0 == team_index_1):
+            team_index_0 = random.randint(0, len(teams_complete)-1)
+            team_index_1 = random.randint(0, len(teams_complete)-1)
+        member_new_0 = teams_complete[team_index_0]["members"].pop(0)
+        member_new_1 = teams_complete[team_index_1]["members"].pop(0)
+        team_final = {"team_id":f"Team-{len(teams_complete)+1}", "members":[member_new_0, member_new_1]}
+        for i in participation_data:
+            team_final['members'].append({"discordid":i["discordid"], "department":i["department"][0]})
+        teams_complete.append(team_final)
+
+
+    else:
+        print("check for proper making plisssss")
+    for i in teams_complete:
+        print(i)
+    return teams_complete
 
 class Teams(commands.Cog):
     def __init__(self, client):
@@ -108,15 +148,21 @@ class Teams(commands.Cog):
         print("Teams online")
         
     @commands.command(name="create_teams", help="Creates teams with even distribution of participants from all departments.")
-    # @commands.has_role("ExBo")
+    @commands.has_role("ExBo")
     async def create_teams(self, ctx, team_size: int = 4):
-        teams = form_teams()
+        print("works")
+        participants_ptr = participants_collection.find({},{"_id":0, "name":0})
+        participation_data = []
+        for i in participants_ptr:
+            participation_data.append(i)
+        print(len(participation_data))
+        teams = form_teams(participation_data=participation_data)
         
         # Output teams in Discord channel
         for team in teams:
             names = []
             for mem in team["members"]:
-                member = ctx.guild.get_member(mem)
+                member = ctx.guild.get_member(mem["discordid"])
                 names.append(member.name)
             members = ', '.join(names)
             await ctx.author.send(f"Team ID: {team['team_id']}\nMembers: {members}")
@@ -140,9 +186,9 @@ class Teams(commands.Cog):
                     pass
     @commands.command()
     async def show(self, ctx):
-        for i in participation_data:
-            print(i)
-
+        # for i in participation_data:
+        #     print(i)
+        print("success")
 
 async def setup(client):
     await client.add_cog(Teams(client))
