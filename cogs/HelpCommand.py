@@ -24,11 +24,9 @@ class HelpCommand(commands.Cog):
             name="Tech-Week-Discord-Bot",
           icon_url=avatar_url  # Use self.client instead of self.bot
         )
-        help_embed.add_field(name="Welcome", value="Welcome to the server.", inline=False)
-        help_embed.add_field(name="Register", value="Register for the tech week.", inline=False)
-        help_embed.add_field(name="Team Generator", value="Generates a team for the tech week.", inline=False)
-        help_embed.add_field(name="Team Name", value="Changes team name.", inline=False)
-
+      
+        help_embed.add_field(name="Register", value="Register for the tech week.There will be 3 departments Technical,Design and Presentation.You can choose any 2 departments as per priority.(Joining two departments are necessary)", inline=False)
+       
         await ctx.send(embed=help_embed)
 
 async def setup(client):
