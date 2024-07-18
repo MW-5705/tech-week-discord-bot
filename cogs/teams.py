@@ -75,6 +75,8 @@ def complete_teams(teams, departments_2, participation_data):
                             i["members"].append( member_dict)
                             if count < 4:
                                 count+=1
+                        else:
+                            count+=1
                     break
                     
                 # new.append(j)
@@ -102,8 +104,8 @@ def form_teams(participation_data):
         teams_complete.append(team)
     
     print(participation_data)
-    print(teams_complete)
-    if len(participation_data) == 3:
+    print("hoii")
+    if len(participation_data) == 3 or len(participation_data) == 4:
         team_final = {"team_id":f"Team-{len(teams_complete)+1}", "members":[]}
         for i in participation_data:
             team_final['members'].append({"discordid":i["discordid"], "department":i["department"][0]})
@@ -152,11 +154,17 @@ class Teams(commands.Cog):
     async def create_teams(self, ctx, team_size: int = 4):
         print("works")
         participants_ptr = participants_collection.find({},{"_id":0, "name":0})
+        print(participants_ptr)
+        # for i in participants_ptr:
+        #     print(i)
         participation_data = []
         for i in participants_ptr:
             participation_data.append(i)
-        print(len(participation_data))
+            # print(i)
+        print((participation_data))
         teams = form_teams(participation_data=participation_data)
+        # print(teams)
+    
         
         # Output teams in Discord channel
         for team in teams:
@@ -164,6 +172,7 @@ class Teams(commands.Cog):
             for mem in team["members"]:
                 member = ctx.guild.get_member(mem["discordid"])
                 names.append(member.name)
+    
             members = ', '.join(names)
             await ctx.author.send(f"Team ID: {team['team_id']}\nMembers: {members}")
         
