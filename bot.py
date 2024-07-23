@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+token = os.getenv("DISCORD_TOKEN")
 
 # Intents setup
 intents = discord.Intents.all()
@@ -45,7 +46,7 @@ async def load_cogs():
 async def main():
     async with client:
         await load_cogs()
-        await client.start("DISCORD_TOKEN")  # Retrieve token from environment variable
+        await client.start(token)  # Retrieve token from environment variable
 
 # Run the main coroutine
 if __name__ == "__main__":
